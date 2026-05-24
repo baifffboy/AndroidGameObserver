@@ -2,15 +2,18 @@ package com.example.gameobserver;
 
 import android.os.Handler;
 import android.os.Looper;
+
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class NetworkThread extends Thread {
-    private static final String SERVER_IP = "192.168.1.168";  // ВАШ IP
+    private static final String SERVER_IP = "192.168.1.168";
     private static final int SERVER_PORT = 12345;
 
     private Socket socket;
@@ -19,22 +22,49 @@ public class NetworkThread extends Thread {
     private final Handler uiHandler;
     private final GameState gameState;
     private volatile boolean running = true;
-    private String observerName;
+    private final String observerName;
+    private Timer leaderboardTimer;
 
     public interface GameUpdateListener {
         void onPlayersUpdated();
+
         void onLeaderboardUpdated(List<Player> leaders);
+
         void onConnectionError(String error);
+
         void onGameStatusChanged(boolean active);
     }
 
-    private GameUpdateListener listener;
+    private final GameUpdateListener listener;
 
     public NetworkThread(GameState gameState, GameUpdateListener listener) {
         this.gameState = gameState;
         this.listener = listener;
         this.uiHandler = new Handler(Looper.getMainLooper());
         this.observerName = "AndroidObserver_" + System.currentTimeMillis();
+    }
+
+    public void startAutoLeaderboardUpdate() {
+        if (leaderboardTimer != null) {
+            leaderboardTimer.cancel();
+        }
+        leaderboardTimer = new Timer(true);
+        leaderboardTimer.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                if (running) {
+                    requestLeaderboard();
+                }
+            }
+        }, 1000, 1000); // Первый запрос через 3 секунды, затем каждые 5 секунд
+    }
+
+    // Добавьте метод остановки
+    public void stopAutoLeaderboardUpdate() {
+        if (leaderboardTimer != null) {
+            leaderboardTimer.cancel();
+            leaderboardTimer = null;
+        }
     }
 
     @Override
@@ -133,32 +163,9 @@ public class NetworkThread extends Thread {
     }
 
     private List<Player> getLeaderboardFromServer() throws Exception {
-        List<Player> leaders = new ArrayList<>();
-
-        try (Socket s = new Socket(SERVER_IP, SERVER_PORT);
-             PrintWriter pout = new PrintWriter(s.getOutputStream(), true);
-             BufferedReader bin = new BufferedReader(new InputStreamReader(s.getInputStream()))) {
-
-            pout.println("GET_LEADERBOARD");
-            System.out.println("Запрос таблицы лидеров отправлен");
-
-            String response;
-            while ((response = bin.readLine()) != null) {
-                System.out.println("Ответ таблицы: " + response);
-                if (response.equals("END_LEADERBOARD")) break;
-                if (response.startsWith("LEADER:")) {
-                    String[] parts = response.split(":");
-                    if (parts.length >= 3) {
-                        String name = parts[1];
-                        int wins = Integer.parseInt(parts[2]);
-                        leaders.add(new Player(name, wins));
-                        System.out.println("Лидер: " + name + " - " + wins + " побед");
-                    }
-                }
-            }
-        }
-
-        return leaders;
+        // Прямой запрос к БД, как в Windows-приложении
+        System.out.println("Запрос таблицы лидеров напрямую из БД...");
+        return DirectDatabaseHelper.getLeaderboardDirect();
     }
 
     public void disconnect() {

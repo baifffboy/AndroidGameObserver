@@ -5,9 +5,11 @@ import android.os.Bundle;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
+
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,6 +21,7 @@ public class MainActivity extends AppCompatActivity implements NetworkThread.Gam
     private Button btnLeaderboard;
     private NetworkThread networkThread;
     private GameState gameState;
+    private static NetworkThread staticNetworkThread;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,9 +52,15 @@ public class MainActivity extends AppCompatActivity implements NetworkThread.Gam
         recyclerView.setAdapter(adapter);
     }
 
+    public static NetworkThread getNetworkThread() {
+        return staticNetworkThread;
+    }
+
     private void startNetworkConnection() {
         networkThread = new NetworkThread(gameState, this);
+        staticNetworkThread = networkThread;
         networkThread.start();
+        networkThread.startAutoLeaderboardUpdate();
     }
 
     @Override
@@ -63,8 +72,14 @@ public class MainActivity extends AppCompatActivity implements NetworkThread.Gam
 
     @Override
     public void onLeaderboardUpdated(List<Player> leaders) {
-        System.out.println("Получено лидеров: " + leaders.size());
-        LeaderboardActivity.updateCache(leaders);
+        // Обновляем отображение в LeaderboardActivity, если оно открыто
+        LeaderboardActivity.updateDisplay(leaders);
+
+        // Логируем для отладки
+        System.out.println("Получена таблица лидеров: " + leaders.size() + " игроков");
+        for (Player p : leaders) {
+            System.out.println("  " + p.getName() + ": " + p.getWins() + " побед");
+        }
     }
 
     @Override
@@ -90,7 +105,9 @@ public class MainActivity extends AppCompatActivity implements NetworkThread.Gam
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        staticNetworkThread = null;
         if (networkThread != null) {
+            networkThread.stopAutoLeaderboardUpdate();
             networkThread.disconnect();
         }
     }

@@ -1,8 +1,8 @@
 package com.example.gameobserver;
 
 public class Player {
-    private int id;
-    private String name;
+    private final int id;
+    private final String name;
     private int score;      // попадания
     private int shots;      // выстрелы
     private int wins;       // победы
@@ -23,13 +23,35 @@ public class Player {
         this.shots = 0;
     }
 
-    public int getId() { return id; }
-    public String getName() { return name; }
-    public int getScore() { return score; }
-    public int getShots() { return shots; }
-    public int getWins() { return wins; }
+    public int getId() {
+        return id;
+    }
 
-    public void setScore(int score) { this.score = score; }
-    public void setShots(int shots) { this.shots = shots; }
-    public void setWins(int wins) { this.wins = wins; }
+    public String getName() {
+        return name;
+    }
+
+    public int getScore() {
+        return score;
+    }
+
+    public int getShots() {
+        return shots;
+    }
+
+    public int getWins() {
+        return wins;
+    }
+
+    public void setScore(int score) {
+        this.score = score;
+    }
+
+    public void setShots(int shots) {
+        this.shots = shots;
+    }
+
+    public void setWins(int wins) {
+        this.wins = wins;
+    }
 }
