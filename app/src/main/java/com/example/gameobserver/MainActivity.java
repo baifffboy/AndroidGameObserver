@@ -58,11 +58,12 @@ public class MainActivity extends AppCompatActivity implements NetworkThread.Gam
     public void onPlayersUpdated() {
         List<Player> playerList = new ArrayList<>(gameState.getPlayers().values());
         adapter.setPlayers(playerList);
+        System.out.println("Обновлен список игроков, всего: " + playerList.size());
     }
 
     @Override
     public void onLeaderboardUpdated(List<Player> leaders) {
-        // Кэшируем данные для LeaderboardActivity
+        System.out.println("Получено лидеров: " + leaders.size());
         LeaderboardActivity.updateCache(leaders);
     }
 
@@ -71,6 +72,7 @@ public class MainActivity extends AppCompatActivity implements NetworkThread.Gam
         runOnUiThread(() -> {
             Toast.makeText(this, error, Toast.LENGTH_LONG).show();
             statusText.setText("Ошибка подключения");
+            System.err.println("Ошибка подключения: " + error);
         });
     }
 

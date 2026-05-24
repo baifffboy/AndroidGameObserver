@@ -10,7 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class NetworkThread extends Thread {
-    private static final String SERVER_IP = "192.168.1.168";
+    private static final String SERVER_IP = "192.168.1.168";  // ВАШ IP
     private static final int SERVER_PORT = 12345;
 
     private Socket socket;
@@ -19,6 +19,7 @@ public class NetworkThread extends Thread {
     private final Handler uiHandler;
     private final GameState gameState;
     private volatile boolean running = true;
+    private String observerName;
 
     public interface GameUpdateListener {
         void onPlayersUpdated();
@@ -33,6 +34,7 @@ public class NetworkThread extends Thread {
         this.gameState = gameState;
         this.listener = listener;
         this.uiHandler = new Handler(Looper.getMainLooper());
+        this.observerName = "AndroidObserver_" + System.currentTimeMillis();
     }
 
     @Override
@@ -42,10 +44,13 @@ public class NetworkThread extends Thread {
             out = new PrintWriter(socket.getOutputStream(), true);
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
-            // Регистрируемся как наблюдатель
-            out.println("Observer_" + System.currentTimeMillis() + ":0:1");
+            // Регистрируемся как наблюдатель (ID 0)
+            out.println(observerName + ":0:1");
+            System.out.println("Отправлено регистрация: " + observerName + ":0:1");
 
             String response = in.readLine();
+            System.out.println("Ответ сервера: " + response);
+
             if (response != null && response.startsWith("OK:")) {
                 String[] parts = response.split(":");
                 int roomId = Integer.parseInt(parts[2]);
@@ -55,6 +60,7 @@ public class NetworkThread extends Thread {
 
                 String msg;
                 while (running && (msg = in.readLine()) != null) {
+                    System.out.println("Получено от сервера: " + msg);
                     handleServerMessage(msg);
                 }
             } else {
@@ -62,6 +68,7 @@ public class NetworkThread extends Thread {
             }
 
         } catch (Exception e) {
+            e.printStackTrace();
             uiHandler.post(() -> listener.onConnectionError("Ошибка: " + e.getMessage()));
         } finally {
             disconnect();
@@ -77,6 +84,7 @@ public class NetworkThread extends Thread {
             String name = parts[2];
             gameState.addOrUpdatePlayer(id, name, 0, 0);
             uiHandler.post(() -> listener.onPlayersUpdated());
+            System.out.println("Добавлен игрок: " + name + " (id=" + id + ")");
 
         } else if (msg.startsWith("SCORE:")) {
             String[] parts = msg.split(":");
@@ -87,6 +95,7 @@ public class NetworkThread extends Thread {
 
             gameState.addOrUpdatePlayer(id, name, score, shots);
             uiHandler.post(() -> listener.onPlayersUpdated());
+            System.out.println("Обновлен счет игрока " + id + ": score=" + score + ", shots=" + shots);
 
         } else if (msg.startsWith("WINNER:")) {
             gameState.setGameActive(false);
@@ -94,10 +103,12 @@ public class NetworkThread extends Thread {
                 listener.onGameStatusChanged(false);
                 listener.onPlayersUpdated();
             });
+            System.out.println("Игра закончена, победитель: " + msg);
 
         } else if (msg.equals("START")) {
             gameState.setGameActive(true);
             uiHandler.post(() -> listener.onGameStatusChanged(true));
+            System.out.println("Игра началась!");
 
         } else if (msg.startsWith("STOP:")) {
             gameState.setGameActive(false);
@@ -105,6 +116,7 @@ public class NetworkThread extends Thread {
                 listener.onGameStatusChanged(false);
                 listener.onPlayersUpdated();
             });
+            System.out.println("Игра остановлена");
         }
     }
 
@@ -115,6 +127,7 @@ public class NetworkThread extends Thread {
                 uiHandler.post(() -> listener.onLeaderboardUpdated(leaders));
             } catch (Exception e) {
                 e.printStackTrace();
+                uiHandler.post(() -> listener.onLeaderboardUpdated(new ArrayList<>()));
             }
         }).start();
     }
@@ -127,14 +140,19 @@ public class NetworkThread extends Thread {
              BufferedReader bin = new BufferedReader(new InputStreamReader(s.getInputStream()))) {
 
             pout.println("GET_LEADERBOARD");
+            System.out.println("Запрос таблицы лидеров отправлен");
 
             String response;
             while ((response = bin.readLine()) != null) {
+                System.out.println("Ответ таблицы: " + response);
                 if (response.equals("END_LEADERBOARD")) break;
                 if (response.startsWith("LEADER:")) {
                     String[] parts = response.split(":");
                     if (parts.length >= 3) {
-                        leaders.add(new Player(parts[1], Integer.parseInt(parts[2])));
+                        String name = parts[1];
+                        int wins = Integer.parseInt(parts[2]);
+                        leaders.add(new Player(name, wins));
+                        System.out.println("Лидер: " + name + " - " + wins + " побед");
                     }
                 }
             }
