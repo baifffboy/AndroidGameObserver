@@ -49,17 +49,16 @@ public class NetworkThread extends Thread {
             leaderboardTimer.cancel();
         }
         leaderboardTimer = new Timer(true);
-        leaderboardTimer.scheduleAtFixedRate(new TimerTask() {
+        leaderboardTimer.schedule(new TimerTask() {
             @Override
             public void run() {
                 if (running) {
                     requestLeaderboard();
                 }
             }
-        }, 1000, 1000); // Первый запрос через 3 секунды, затем каждые 5 секунд
+        }, 1000, 1000);
     }
 
-    // Добавьте метод остановки
     public void stopAutoLeaderboardUpdate() {
         if (leaderboardTimer != null) {
             leaderboardTimer.cancel();
@@ -73,13 +72,8 @@ public class NetworkThread extends Thread {
             socket = new Socket(SERVER_IP, SERVER_PORT);
             out = new PrintWriter(socket.getOutputStream(), true);
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-
-            // Регистрируемся как наблюдатель (ID 0)
             out.println(observerName + ":0:1");
-            System.out.println("Отправлено регистрация: " + observerName + ":0:1");
-
             String response = in.readLine();
-            System.out.println("Ответ сервера: " + response);
 
             if (response != null && response.startsWith("OK:")) {
                 String[] parts = response.split(":");
@@ -90,7 +84,6 @@ public class NetworkThread extends Thread {
 
                 String msg;
                 while (running && (msg = in.readLine()) != null) {
-                    System.out.println("Получено от сервера: " + msg);
                     handleServerMessage(msg);
                 }
             } else {
@@ -112,43 +105,33 @@ public class NetworkThread extends Thread {
             String[] parts = msg.split(":");
             int playerId = Integer.parseInt(parts[1]);
             String name = parts[2];
-            int roomId = Integer.parseInt(parts[3]);  // ← НОВОЕ: читаем комнату
+            int roomId = Integer.parseInt(parts[3]);
             gameState.addOrUpdatePlayer(roomId, playerId, name, 0, 0);
             uiHandler.post(() -> listener.onPlayersUpdated());
-            System.out.println("Добавлен игрок: " + name + " (комната " + roomId + ", id=" + playerId + ")");
-
         } else if (msg.startsWith("SCORE:")) {
             String[] parts = msg.split(":");
             int playerId = Integer.parseInt(parts[1]);
             int score = Integer.parseInt(parts[2]);
             int shots = Integer.parseInt(parts[3]);
             String name = parts[4];
-            int roomId = Integer.parseInt(parts[5]);  // ← НОВОЕ: читаем комнату
-
+            int roomId = Integer.parseInt(parts[5]);
             gameState.addOrUpdatePlayer(roomId, playerId, name, score, shots);
             uiHandler.post(() -> listener.onPlayersUpdated());
-            System.out.println("Обновлен счет: " + name + " (комната " + roomId + ") score=" + score + ", shots=" + shots);
-
         } else if (msg.startsWith("WINNER:")) {
             gameState.setGameActive(false);
             uiHandler.post(() -> {
                 listener.onGameStatusChanged(false);
                 listener.onPlayersUpdated();
             });
-            System.out.println("Игра закончена, победитель: " + msg);
-
         } else if (msg.equals("START")) {
             gameState.setGameActive(true);
             uiHandler.post(() -> listener.onGameStatusChanged(true));
-            System.out.println("Игра началась!");
-
         } else if (msg.startsWith("STOP:")) {
             gameState.setGameActive(false);
             uiHandler.post(() -> {
                 listener.onGameStatusChanged(false);
                 listener.onPlayersUpdated();
             });
-            System.out.println("Игра остановлена: " + msg);
         }
     }
 
@@ -165,8 +148,6 @@ public class NetworkThread extends Thread {
     }
 
     private List<Player> getLeaderboardFromServer() throws Exception {
-        // Прямой запрос к БД, как в Windows-приложении
-        System.out.println("Запрос таблицы лидеров напрямую из БД...");
         return DirectDatabaseHelper.getLeaderboardDirect();
     }
 

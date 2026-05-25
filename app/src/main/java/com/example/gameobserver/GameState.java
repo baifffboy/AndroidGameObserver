@@ -7,7 +7,6 @@ public class GameState {
     private boolean gameActive = false;
     private int roomId = 1;
 
-    // Уникальный ключ = комната * 100 + id игрока
     private int makeKey(int roomId, int playerId) {
         return roomId * 100 + playerId;
     }
@@ -27,11 +26,6 @@ public class GameState {
         }
     }
 
-    public void removePlayer(int roomId, int playerId) {
-        int key = makeKey(roomId, playerId);
-        players.remove(key);
-    }
-
     public ConcurrentHashMap<Integer, Player> getPlayers() {
         return players;
     }
@@ -40,20 +34,7 @@ public class GameState {
         this.gameActive = active;
     }
 
-    public boolean isGameActive() {
-        return gameActive;
-    }
-
-    public void clear() {
-        players.clear();
-        gameActive = false;
-    }
-
     public void setRoomId(int roomId) {
         this.roomId = roomId;
-    }
-
-    public int getRoomId() {
-        return roomId;
     }
 }

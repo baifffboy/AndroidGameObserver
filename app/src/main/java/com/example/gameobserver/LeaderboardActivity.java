@@ -33,18 +33,15 @@ public class LeaderboardActivity extends AppCompatActivity {
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setAdapter(adapter);
 
-        // Показываем кэшированные данные
         if (!cachedLeaders.isEmpty()) {
             adapter.setLeaders(cachedLeaders);
         } else {
-            // Показываем сообщение, что данных нет
             Toast.makeText(this, "Нет данных. Сыграйте хотя бы одну игру.", Toast.LENGTH_LONG).show();
         }
 
         backButton.setOnClickListener(v -> finish());
     }
 
-    // Статический метод для обновления из MainActivity
     public static void updateDisplay(List<Player> leaders) {
         if (leaders != null) {
             cachedLeaders = new ArrayList<>(leaders);

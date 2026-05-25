@@ -26,17 +26,45 @@ public class Player {
         this.roomId = 0;
     }
 
-    public int getId() { return id; }
-    public String getName() { return name; }
-    public int getScore() { return score; }
-    public int getShots() { return shots; }
-    public int getWins() { return wins; }
-    public int getRoomId() { return roomId; }
+    public int getId() {
+        return id;
+    }
 
-    public void setScore(int score) { this.score = score; }
-    public void setShots(int shots) { this.shots = shots; }
-    public void setWins(int wins) { this.wins = wins; }
-    public void setRoomId(int roomId) { this.roomId = roomId; }
+    public String getName() {
+        return name;
+    }
+
+    public int getScore() {
+        return score;
+    }
+
+    public int getShots() {
+        return shots;
+    }
+
+    public int getWins() {
+        return wins;
+    }
+
+    public int getRoomId() {
+        return roomId;
+    }
+
+    public void setScore(int score) {
+        this.score = score;
+    }
+
+    public void setShots(int shots) {
+        this.shots = shots;
+    }
+
+    public void setWins(int wins) {
+        this.wins = wins;
+    }
+
+    public void setRoomId(int roomId) {
+        this.roomId = roomId;
+    }
 
     public String getDisplayName() {
         return name + " (ком." + roomId + ")";
