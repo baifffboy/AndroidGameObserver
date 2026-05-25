@@ -66,8 +66,18 @@ public class MainActivity extends AppCompatActivity implements NetworkThread.Gam
     @Override
     public void onPlayersUpdated() {
         List<Player> playerList = new ArrayList<>(gameState.getPlayers().values());
+        // Сортируем по комнате, затем по id
+        playerList.sort((p1, p2) -> {
+            if (p1.getRoomId() != p2.getRoomId()) {
+                return Integer.compare(p1.getRoomId(), p2.getRoomId());
+            }
+            return Integer.compare(p1.getId(), p2.getId());
+        });
         adapter.setPlayers(playerList);
         System.out.println("Обновлен список игроков, всего: " + playerList.size());
+        for (Player p : playerList) {
+            System.out.println("  " + p.getDisplayName() + " - выстрелы: " + p.getShots() + ", попадания: " + p.getScore());
+        }
     }
 
     @Override

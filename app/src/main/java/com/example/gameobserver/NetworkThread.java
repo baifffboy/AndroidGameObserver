@@ -110,22 +110,24 @@ public class NetworkThread extends Thread {
 
         if (msg.startsWith("NEW_PLAYER:")) {
             String[] parts = msg.split(":");
-            int id = Integer.parseInt(parts[1]);
+            int playerId = Integer.parseInt(parts[1]);
             String name = parts[2];
-            gameState.addOrUpdatePlayer(id, name, 0, 0);
+            int roomId = Integer.parseInt(parts[3]);  // ← НОВОЕ: читаем комнату
+            gameState.addOrUpdatePlayer(roomId, playerId, name, 0, 0);
             uiHandler.post(() -> listener.onPlayersUpdated());
-            System.out.println("Добавлен игрок: " + name + " (id=" + id + ")");
+            System.out.println("Добавлен игрок: " + name + " (комната " + roomId + ", id=" + playerId + ")");
 
         } else if (msg.startsWith("SCORE:")) {
             String[] parts = msg.split(":");
-            int id = Integer.parseInt(parts[1]);
+            int playerId = Integer.parseInt(parts[1]);
             int score = Integer.parseInt(parts[2]);
             int shots = Integer.parseInt(parts[3]);
-            String name = parts.length > 4 ? parts[4] : "";
+            String name = parts[4];
+            int roomId = Integer.parseInt(parts[5]);  // ← НОВОЕ: читаем комнату
 
-            gameState.addOrUpdatePlayer(id, name, score, shots);
+            gameState.addOrUpdatePlayer(roomId, playerId, name, score, shots);
             uiHandler.post(() -> listener.onPlayersUpdated());
-            System.out.println("Обновлен счет игрока " + id + ": score=" + score + ", shots=" + shots);
+            System.out.println("Обновлен счет: " + name + " (комната " + roomId + ") score=" + score + ", shots=" + shots);
 
         } else if (msg.startsWith("WINNER:")) {
             gameState.setGameActive(false);
@@ -146,7 +148,7 @@ public class NetworkThread extends Thread {
                 listener.onGameStatusChanged(false);
                 listener.onPlayersUpdated();
             });
-            System.out.println("Игра остановлена");
+            System.out.println("Игра остановлена: " + msg);
         }
     }
 
